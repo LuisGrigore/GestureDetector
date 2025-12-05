@@ -1,0 +1,15 @@
+.ipynb_checkpoints/
+
+.env/
+.venv/
+venv/
+
+__pycache__/
+*.py[cod]
+
+.vscode/
+.idea/
+
+*.log
+*.tmp
+*.swp
