@@ -4,6 +4,7 @@ import pytest
 
 from batch_processing import (
     BatchProcessor,
+    BatchProcessorConfig,
     IWorker,
     ExceptionInfo,
     WorkerReportedError,
@@ -15,6 +16,7 @@ from gen_mp_queue import GenMPQueue
 # =========================
 # Workers de prueba
 # =========================
+
 
 class SimpleWorker(IWorker[int, int]):
     def work(self, item: int) -> int:
@@ -55,6 +57,7 @@ class SlowWorker(IWorker[int, int]):
 # Fixtures
 # =========================
 
+
 @pytest.fixture
 def queues():
     return (
@@ -64,44 +67,51 @@ def queues():
     )
 
 
-def start_and_stop(bp: BatchProcessor, delay=0.1):
+def start_and_stop(bp: BatchProcessor, delay=0.5):
     bp.start()
     time.sleep(delay)
     bp.stop()
 
 
-MONITOR_FREQ = 0.01  # frecuencia común para tests
+MONITOR_FREQ = 0.0001  # frecuencia común para tests
 
 
 # =========================
 # Ciclo de vida
 # =========================
 
+
 def test_start_creates_n_workers(queues):
     in_q, out_q, err_q = queues
+    config = BatchProcessorConfig(
+        n_workers=2,
+        worker_monitoring_frequency=MONITOR_FREQ,
+    )
     bp = BatchProcessor(
         in_q,
         out_q,
         err_q,
-        n_workers=2,
         worker_generator=lambda iq, oq: SimpleWorker(iq, oq),
-        worker_monitoring_frequency=MONITOR_FREQ,
+        config=config,
     )
     bp.start()
-    assert len(bp.workers) == 2
-    assert all(p.is_alive() for p in bp.workers)
+    assert len(bp.worker_pool.workers) == 2
+    assert all(p.is_alive() for p in bp.worker_pool.workers)
     bp.stop()
 
 
 def test_start_twice_raises(queues):
     in_q, out_q, err_q = queues
+    config = BatchProcessorConfig(
+        n_workers=1,
+        worker_monitoring_frequency=MONITOR_FREQ,
+    )
     bp = BatchProcessor(
         in_q,
         out_q,
         err_q,
-        n_workers=1,
         worker_generator=lambda iq, oq: SimpleWorker(iq, oq),
-        worker_monitoring_frequency=MONITOR_FREQ,
+        config=config,
     )
     bp.start()
     with pytest.raises(RuntimeError):
@@ -111,13 +121,16 @@ def test_start_twice_raises(queues):
 
 def test_context_manager_calls_stop(queues):
     in_q, out_q, err_q = queues
+    config = BatchProcessorConfig(
+        n_workers=1,
+        worker_monitoring_frequency=MONITOR_FREQ,
+    )
     with BatchProcessor(
         in_q,
         out_q,
         err_q,
-        n_workers=1,
         worker_generator=lambda iq, oq: SimpleWorker(iq, oq),
-        worker_monitoring_frequency=MONITOR_FREQ,
+        config=config,
     ):
         pass
 
@@ -126,18 +139,22 @@ def test_context_manager_calls_stop(queues):
 # Procesamiento
 # =========================
 
+
 def test_process_items_successfully(queues):
     in_q, out_q, err_q = queues
     for i in range(3):
         in_q.put(i)
 
+    config = BatchProcessorConfig(
+        n_workers=1,
+        worker_monitoring_frequency=MONITOR_FREQ,
+    )
     bp = BatchProcessor(
         in_q,
         out_q,
         err_q,
-        n_workers=1,
         worker_generator=lambda iq, oq: SimpleWorker(iq, oq),
-        worker_monitoring_frequency=MONITOR_FREQ,
+        config=config,
     )
 
     start_and_stop(bp)
@@ -151,13 +168,16 @@ def test_worker_keeps_state(queues):
     for i in range(3):
         in_q.put(i)
 
+    config = BatchProcessorConfig(
+        n_workers=1,
+        worker_monitoring_frequency=MONITOR_FREQ,
+    )
     bp = BatchProcessor(
         in_q,
         out_q,
         err_q,
-        n_workers=1,
         worker_generator=lambda iq, oq: StatefulWorker(iq, oq),
-        worker_monitoring_frequency=MONITOR_FREQ,
+        config=config,
     )
 
     start_and_stop(bp)
@@ -171,13 +191,16 @@ def test_parallelism_is_faster_than_sequential(queues):
     for i in range(4):
         in_q.put(i)
 
+    config = BatchProcessorConfig(
+        n_workers=2,
+        worker_monitoring_frequency=MONITOR_FREQ,
+    )
     bp = BatchProcessor(
         in_q,
         out_q,
         err_q,
-        n_workers=2,
         worker_generator=lambda iq, oq: SlowWorker(iq, oq),
-        worker_monitoring_frequency=MONITOR_FREQ,
+        config=config,
     )
 
     start = time.time()
@@ -191,19 +214,23 @@ def test_parallelism_is_faster_than_sequential(queues):
 # Errores reportados
 # =========================
 
+
 def test_worker_exception_is_reported(queues):
     in_q, out_q, err_q = queues
     in_q.put(1)
     in_q.put(2)
 
+    config = BatchProcessorConfig(
+        n_workers=1,
+        worker_monitoring_frequency=MONITOR_FREQ,
+        stop_on_reported_exception=False,
+    )
     bp = BatchProcessor(
         in_q,
         out_q,
         err_q,
-        n_workers=1,
         worker_generator=lambda iq, oq: ExceptionWorker(iq, oq),
-        worker_monitoring_frequency=MONITOR_FREQ,
-        stop_on_reported_exception=False,
+        config=config,
     )
 
     start_and_stop(bp)
@@ -217,18 +244,21 @@ def test_stop_on_reported_exception_raises(queues):
     in_q, out_q, err_q = queues
     in_q.put(2)
 
+    config = BatchProcessorConfig(
+        n_workers=1,
+        worker_monitoring_frequency=MONITOR_FREQ,
+        stop_on_reported_exception=True,
+    )
     bp = BatchProcessor(
         in_q,
         out_q,
         err_q,
-        n_workers=1,
         worker_generator=lambda iq, oq: ExceptionWorker(iq, oq),
-        worker_monitoring_frequency=MONITOR_FREQ,
-        stop_on_reported_exception=True,
+        config=config,
     )
 
     bp.start()
-    time.sleep(0.1)
+    time.sleep(0.5)
 
     with pytest.raises(WorkerReportedError):
         bp.stop()
@@ -238,18 +268,22 @@ def test_stop_on_reported_exception_raises(queues):
 # Fallos fatales
 # =========================
 
+
 def test_fatal_worker_raises(queues):
     in_q, out_q, err_q = queues
     in_q.put(2)
 
+    config = BatchProcessorConfig(
+        n_workers=1,
+        worker_monitoring_frequency=MONITOR_FREQ,
+        stop_on_worker_death=True,
+    )
     bp = BatchProcessor(
         in_q,
         out_q,
         err_q,
-        n_workers=1,
         worker_generator=lambda iq, oq: FatalWorker(iq, oq),
-        worker_monitoring_frequency=MONITOR_FREQ,
-        stop_on_worker_death=True,
+        config=config,
     )
 
     bp.start()
@@ -263,14 +297,17 @@ def test_fatal_worker_can_be_ignored(queues):
     in_q, out_q, err_q = queues
     in_q.put(2)
 
+    config = BatchProcessorConfig(
+        n_workers=1,
+        worker_monitoring_frequency=MONITOR_FREQ,
+        stop_on_worker_death=False,
+    )
     bp = BatchProcessor(
         in_q,
         out_q,
         err_q,
-        n_workers=1,
         worker_generator=lambda iq, oq: FatalWorker(iq, oq),
-        worker_monitoring_frequency=MONITOR_FREQ,
-        stop_on_worker_death=False,
+        config=config,
     )
 
     start_and_stop(bp)
@@ -280,20 +317,24 @@ def test_fatal_worker_can_be_ignored(queues):
 # Restart de workers
 # =========================
 
+
 def test_restart_dead_worker(queues):
     in_q, out_q, err_q = queues
     in_q.put(2)
     in_q.put(1)
 
+    config = BatchProcessorConfig(
+        n_workers=1,
+        worker_monitoring_frequency=MONITOR_FREQ,
+        restart_dead_workers=True,
+        stop_on_worker_death=False,
+    )
     bp = BatchProcessor(
         in_q,
         out_q,
         err_q,
-        n_workers=1,
         worker_generator=lambda iq, oq: FatalWorker(iq, oq),
-        worker_monitoring_frequency=MONITOR_FREQ,
-        restart_dead_workers=True,
-        stop_on_worker_death=False,
+        config=config,
     )
 
     start_and_stop(bp, delay=0.2)
@@ -305,15 +346,19 @@ def test_restart_dead_worker(queues):
 # Casos límite
 # =========================
 
+
 def test_empty_queue_no_crash(queues):
     in_q, out_q, err_q = queues
+    config = BatchProcessorConfig(
+        n_workers=1,
+        worker_monitoring_frequency=MONITOR_FREQ,
+    )
     bp = BatchProcessor(
         in_q,
         out_q,
         err_q,
-        n_workers=1,
         worker_generator=lambda iq, oq: SimpleWorker(iq, oq),
-        worker_monitoring_frequency=MONITOR_FREQ,
+        config=config,
     )
     start_and_stop(bp)
 
@@ -323,13 +368,16 @@ def test_stop_processes_remaining_items(queues):
     for i in range(5):
         in_q.put(i)
 
+    config = BatchProcessorConfig(
+        n_workers=1,
+        worker_monitoring_frequency=MONITOR_FREQ,
+    )
     bp = BatchProcessor(
         in_q,
         out_q,
         err_q,
-        n_workers=1,
         worker_generator=lambda iq, oq: SlowWorker(iq, oq),
-        worker_monitoring_frequency=MONITOR_FREQ,
+        config=config,
     )
 
     bp.start()
