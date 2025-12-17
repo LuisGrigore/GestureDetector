@@ -1,39 +1,55 @@
-from __future__ import annotations
-
 from abc import ABC, abstractmethod
-from typing import Generic, TypeVar
-from contextlib import AbstractContextManager
+from queue import Empty
+from typing import Callable, Generic, TypeVar
+from context import BatchContext
 from exception_info import ExceptionInfo
+from logger import logger
+
 
 I = TypeVar("I")
 O = TypeVar("O")
 
-class WorkerError(Exception):
-    pass
+
+class IWorker(ABC):
+    @abstractmethod
+    def target(self) -> None:
+        pass
 
 
-class WorkerFatalError(WorkerError):
-    def __init__(self, pid: int | None, exitcode: int | None):
-        super().__init__(f"Worker pid={pid} died with exitcode={exitcode}")
-        self.pid = pid
-        self.exitcode = exitcode
-
-
-class WorkerReportedError(WorkerError):
-    def __init__(self, info: ExceptionInfo):
-        super().__init__(
-            f"Worker reported exception {info.exc_type}: {info.message}\n{info.tb}"
-        )
-        self.info = info
-
-
-class IWorker(Generic[I, O], AbstractContextManager, ABC):
+class IBatchWorker(Generic[I, O], ABC):
     @abstractmethod
     def work(self, item: I) -> O:
         pass
 
-    def __enter__(self) -> IWorker[I, O]:
-        return self
 
-    def __exit__(self, exc_type, exc_value, tb) -> None:
-        pass
+class BatchWorkerExecutor(Generic[I, O], IWorker):
+    def __init__(
+        self,
+        ctx: BatchContext,
+        worker_factory: Callable[[], IBatchWorker[I, O]],
+    ):
+        self.ctx = ctx
+        self.worker_factory = worker_factory
+
+    def target(self) -> None:
+        worker = self.worker_factory()
+
+        while not self.ctx.stop_event.is_set():
+            if self.ctx.abort_event.is_set():
+                break
+
+            try:
+                item = self.ctx.in_queue.get(timeout=0.1)
+            except Empty:
+                continue
+
+            try:
+                result = worker.work(item)
+                self.ctx.out_queue.put(result)
+
+            except Exception as exc:
+                info = ExceptionInfo.from_exception(exc, item)
+                self.ctx.error_queue.put(info)
+
+                if self.ctx.config.logging:
+                    logger.exception("Worker exception")

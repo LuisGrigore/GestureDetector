@@ -1,15 +1,20 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
+
+from enum import Enum, auto
+from dataclasses import dataclass
+
+
+class FailurePolicy(Enum):
+    IGNORE = auto()
+    ABORT = auto()
+    RESTART = auto()
 
 
 @dataclass
 class BatchProcessorConfig:
-    n_workers: int
-    worker_monitoring_frequency: float
-    worker_timeout: Optional[float] = None
-    stop_on_reported_exception: bool = False
-    stop_on_worker_death: bool = True
-    restart_dead_workers: bool = False
+    on_worker_exception: FailurePolicy
+    on_worker_death: FailurePolicy
+    worker_monitoring_frequency: float = 1.0
     logging: bool = True

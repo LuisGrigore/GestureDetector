@@ -1,107 +1,62 @@
-from __future__ import annotations
-
-from abc import ABC, abstractmethod
 from multiprocessing import Process
-from typing import Callable, Generic, Optional, List, TypeVar
 from threading import Lock
+from typing import Callable, Optional, List
+from worker import IWorker
+from worker_errors import WorkerFatalError
 
 
-class IWorker(ABC):
-    @abstractmethod
-    def target(self) -> None:
-        pass
-
-
-class IWorkerPool(ABC):
-    @abstractmethod
-    def start_workers(self) -> None:
-        pass
-
-    @abstractmethod
-    def join_workers(self) -> None:
-        pass
-
-    @abstractmethod
-    def cleanup_workers(self) -> None:
-        pass
-
-    @abstractmethod
-    def restart_dead_workers(self) -> None:
-        pass
-
-    @abstractmethod
-    def get_worker_list(self) -> List[Process]:
-        pass
-
-
-class WorkerPool(IWorkerPool):
+class WorkerPool:
     def __init__(
         self,
         n_workers: int,
         worker_factory: Callable[[], IWorker],
         worker_timeout: Optional[float],
-        lock: Lock,
     ):
-        self.n_workers = n_workers
-        self.worker_factory: Optional[Callable[[], None]] = None
-        self.worker_timeout = worker_timeout
-        self.lock = lock
-        self.workers: List[Process] = []
-        
-    def _worker_target(self) -> None:
+        self._n_workers = n_workers
+        self._worker_factory = worker_factory
+        self._timeout = worker_timeout
+        self._workers: List[Process] = []
+        self._lock = Lock()
+        self._started = False
 
-    def start_workers(self, worker_target: Callable[[], None]) -> None:
-        self.worker_target = worker_target
-        with self.lock:
-            for _ in range(self.n_workers):
-                p = Process(target=self.worker_target)
-                p.start()
-                self.workers.append(p)
+    def _spawn(self) -> Process:
+        worker = self._worker_factory()
+        p = Process(target=worker.target)
+        p.start()
+        return p
 
-    def join_workers(self) -> None:
-        self.worker_target = None
-        with self.lock:
-            for p in self.workers:
-                if self.worker_timeout:
-                    p.join(timeout=self.worker_timeout)
-                else:
-                    p.join()
+    def start(self) -> None:
+        with self._lock:
+            if self._started:
+                raise RuntimeError("WorkerPool already started")
+            self._workers = [self._spawn() for _ in range(self._n_workers)]
+            self._started = True
 
-    def cleanup_workers(self) -> None:
-        with self.lock:
-            for p in self.workers:
+    def stop(self) -> None:
+        with self._lock:
+            for p in self._workers:
+                p.join(timeout=self._timeout)
+
+    def cleanup(self) -> None:
+        with self._lock:
+            for p in self._workers:
                 if p.is_alive():
-                    try:
-                        p.terminate()
-                    except Exception:
-                        pass
-            self.workers.clear()
+                    p.terminate()
+            self._workers.clear()
+            self._started = False
 
-    def restart_dead_workers(self) -> None:
-        if not self.worker_target:
-            raise RuntimeError("Workers have not been started.")
-        alive = [p for p in self.workers if p.is_alive()]
-        dead_count = self.n_workers - len(alive)
-        if dead_count <= 0:
-            return
-        self.workers = alive
-        for _ in range(dead_count):
-            p = Process(target=self.worker_target)
-            p.start()
-            self.workers.append(p)
+    def restart_dead(self) -> int:
+        with self._lock:
+            alive = [p for p in self._workers if p.is_alive()]
+            dead = self._n_workers - len(alive)
+            self._workers = alive
+            for _ in range(dead):
+                self._workers.append(self._spawn())
+            return dead
 
-    def get_worker_list(self) -> List[Process]:
-        return self.workers
-
-
-def create_worker_pool(
-    n_workers: int,
-    worker_target: Callable[[], None],
-    worker_timeout: Optional[float],
-) -> WorkerPool:
-    return WorkerPool(
-        n_workers=n_workers,
-        worker_target=worker_target,
-        worker_timeout=worker_timeout,
-        lock=Lock(),
-    )
+    def fatal_errors(self) -> List[WorkerFatalError]:
+        return [
+            WorkerFatalError(p.pid, p.exitcode)
+            for p in self._workers
+            if p.exitcode not in (None, 0)
+        ]
