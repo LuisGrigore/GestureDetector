@@ -1,19 +1,14 @@
 from abc import ABC, abstractmethod
 from queue import Empty
 from typing import Callable, Generic, TypeVar
-from context import BatchContext
-from exception_info import ExceptionInfo
+from .context import BatchProcessorContext
+from batch_processor.exception_info import ExceptionInfo
 from logger import logger
+from worker_pool.worker import IWorker
 
 
 I = TypeVar("I")
 O = TypeVar("O")
-
-
-class IWorker(ABC):
-    @abstractmethod
-    def target(self) -> None:
-        pass
 
 
 class IBatchWorker(Generic[I, O], ABC):
@@ -25,7 +20,7 @@ class IBatchWorker(Generic[I, O], ABC):
 class BatchWorkerExecutor(Generic[I, O], IWorker):
     def __init__(
         self,
-        ctx: BatchContext,
+        ctx: BatchProcessorContext[I, O],
         worker_factory: Callable[[], IBatchWorker[I, O]],
     ):
         self.ctx = ctx
@@ -51,5 +46,5 @@ class BatchWorkerExecutor(Generic[I, O], IWorker):
                 info = ExceptionInfo.from_exception(exc, item)
                 self.ctx.error_queue.put(info)
 
-                if self.ctx.config.logging:
+                if self.ctx.config.shared.logging:
                     logger.exception("Worker exception")

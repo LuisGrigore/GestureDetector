@@ -1,13 +1,9 @@
 from multiprocessing import Event
-from gen_mp_queue import GenMPQueue
-from configuration import BatchProcessorConfig
+from typing import Optional
 
 
-class BatchContext:
-    def __init__(self, config: BatchProcessorConfig):
-        self.config = config
-        self.in_queue = GenMPQueue()
-        self.out_queue = GenMPQueue()
-        self.error_queue = GenMPQueue()
+class ControlContext:
+    def __init__(self):
         self.stop_event = Event()
         self.abort_event = Event()
+        self.fatal_exception: Optional[Exception] = None

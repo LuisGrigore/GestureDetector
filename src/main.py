@@ -1,11 +1,11 @@
 import time
 import random
 import os
-from typing import Any
+from queue import Empty
 
-from configuration import BatchProcessorConfig, FailurePolicy
-from batch_processor import BatchProcessor,create_batch_processor
-from worker import IBatchWorker
+from batch_processor.batch_worker import IBatchWorker
+from batch_processor.configuration import BatchProcessorConfig, FailurePolicy
+from batch_processor.batch_processor import IBatchProcessor, create_batch_processor
 
 
 # ----------------------------
@@ -35,13 +35,13 @@ def main():
     print("=== Iniciando BatchProcessor de prueba ===")
 
     config = BatchProcessorConfig(
-        on_worker_exception=FailurePolicy.IGNORE,   # probar ABORT también
-        on_worker_death=FailurePolicy.RESTART,      # probar ABORT también
+        on_worker_exception=FailurePolicy.IGNORE,  # probar ABORT también
+        on_worker_death=FailurePolicy.RESTART,  # probar ABORT también
         worker_monitoring_frequency=0.5,
         logging=True,
     )
 
-    processor: BatchProcessor[int, int] = create_batch_processor(
+    processor: IBatchProcessor[int, int] = create_batch_processor(
         n_workers=3,
         worker_factory=TestWorker,
         config=config,
@@ -56,15 +56,18 @@ def main():
 
             for i in range(15):
                 print(f"[MAIN] Insertando item {i}")
-                processor.ctx.in_queue.put(i)
+                processor.put(i)
 
                 # Inserción gradual
                 time.sleep(random.uniform(0.1, 0.4))
 
                 # Leer resultados parciales
-                while not processor.ctx.out_queue.empty():
-                    result = processor.ctx.out_queue.get()
-                    print(f"[MAIN] Resultado recibido: {result}")
+                while True:
+                    try:
+                        result = processor.get_nowait()
+                        print(f"[MAIN] Resultado recibido: {result}")
+                    except Empty:
+                        break
 
                 # Leer excepciones reportadas
                 for exc in processor.poll_exceptions():
@@ -77,8 +80,12 @@ def main():
             time.sleep(3)
 
             # Vaciar colas finales
-            while not processor.ctx.out_queue.empty():
-                print(f"[MAIN] Resultado final: {processor.ctx.out_queue.get()}")
+            while True:
+                try:
+                    result = processor.get_nowait()
+                    print(f"[MAIN] Resultado final: {result}")
+                except Empty:
+                    break
 
             for exc in processor.poll_exceptions():
                 print(

@@ -2,7 +2,7 @@ import sys
 import time
 import pytest
 
-from batch_processor import (
+from batch_processor.batch_processor import (
     BatchProcessor,
     BatchProcessorConfig,
     IWorker,

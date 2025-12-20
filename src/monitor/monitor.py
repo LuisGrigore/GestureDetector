@@ -1,18 +1,20 @@
 import time
 from threading import Thread
 from queue import Queue
-from typing import Optional
-from worker_pool import WorkerPool
-from context import BatchContext
-from configuration import FailurePolicy
-from worker_errors import WorkerFatalError
+from typing import Optional, Generic, TypeVar
+from .context import MonitorContext
+from worker_pool.worker_pool import WorkerPool
+from .configuration import FailurePolicy
+
+I = TypeVar("I")
+O = TypeVar("O")
 
 
-class WorkerMonitor:
-    def __init__(self, pool: WorkerPool, ctx: BatchContext):
+class WorkerMonitor(Generic[I, O]):
+    def __init__(self, pool: WorkerPool, ctx: MonitorContext):
         self.pool = pool
         self.ctx = ctx
-        self.events: Queue[Exception] = Queue()
+        self.events = Queue()
         self._thread: Optional[Thread] = None
 
     def start(self) -> None:
@@ -28,6 +30,11 @@ class WorkerMonitor:
             if self.ctx.config.on_worker_death != FailurePolicy.IGNORE:
                 for fatal in self.pool.fatal_errors():
                     self.events.put(fatal)
+                    if self.ctx.config.on_worker_death == FailurePolicy.ABORT:
+                        if not self.ctx.fatal_exception:
+                            self.ctx.fatal_exception = fatal
+                        self.ctx.abort_event.set()
+                        self.ctx.stop_event.set()
 
             if self.ctx.config.on_worker_death == FailurePolicy.RESTART:
                 self.pool.restart_dead()
