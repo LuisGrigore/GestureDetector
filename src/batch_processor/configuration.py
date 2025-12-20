@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from dataclasses import dataclass
+from typing import Optional
 
 from configuration import FailurePolicy, SharedConfig
 
@@ -19,3 +20,4 @@ class BatchProcessorConfig:
     on_worker_death: FailurePolicy
     worker_monitoring_frequency: float = 1.0
     logging: bool = True
+    worker_timeout: Optional[float] = None

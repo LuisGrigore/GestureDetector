@@ -119,7 +119,6 @@ def create_batch_processor(
     n_workers: int,
     worker_factory: Callable[[], IBatchWorker[I, O]],
     config: BatchProcessorConfig,
-    worker_timeout: Optional[float] = None,
 ) -> IBatchProcessor[I, O]:
 
     shared_config = SharedConfig(logging=config.logging)
@@ -141,7 +140,7 @@ def create_batch_processor(
     pool = WorkerPool(
         n_workers=n_workers,
         worker_factory=executor_factory,
-        worker_timeout=worker_timeout,
+        worker_timeout=config.worker_timeout,
     )
 
     monitor_ctx = MonitorContext(monitor_config, control_ctx)

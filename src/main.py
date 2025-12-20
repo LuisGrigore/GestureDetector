@@ -39,13 +39,13 @@ def main():
         on_worker_death=FailurePolicy.RESTART,  # probar ABORT también
         worker_monitoring_frequency=0.5,
         logging=True,
+        worker_timeout=2.0,
     )
 
     processor: IBatchProcessor[int, int] = create_batch_processor(
         n_workers=3,
         worker_factory=TestWorker,
         config=config,
-        worker_timeout=2.0,
     )
 
     try:
