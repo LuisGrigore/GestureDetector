@@ -4,8 +4,8 @@ from typing import Generic, TypeVar, Optional, List
 from contextlib import AbstractContextManager
 from .context import BatchProcessorContext
 from .worker_reported_error import WorkerReportedError
-from worker_pool.worker_pool import WorkerPool
-from monitor.monitor import WorkerMonitor
+from worker_pool.worker_pool import IWorkerPool, WorkerPool
+from monitor.monitor import IWorkerMonitor, WorkerMonitor
 from .configuration import FailurePolicy
 from .exception_info import ExceptionInfo
 
@@ -38,7 +38,7 @@ class IBatchProcessor(Generic[I, O], AbstractContextManager):
 
 class BatchProcessor(IBatchProcessor[I, O]):
     def __init__(
-        self, pool: WorkerPool, monitor: WorkerMonitor, ctx: BatchProcessorContext[I, O]
+        self, pool: IWorkerPool, monitor: IWorkerMonitor, ctx: BatchProcessorContext[I, O]
     ):
         self.pool = pool
         self.monitor = monitor

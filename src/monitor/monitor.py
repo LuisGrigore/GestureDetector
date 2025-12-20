@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 import time
 from threading import Thread
 from queue import Queue
@@ -10,7 +11,17 @@ I = TypeVar("I")
 O = TypeVar("O")
 
 
-class WorkerMonitor(Generic[I, O]):
+class IWorkerMonitor(Generic[I, O], ABC):
+    @abstractmethod
+    def start(self) -> None:
+        pass
+
+    @abstractmethod
+    def stop(self) -> None:
+        pass
+
+
+class WorkerMonitor(IWorkerMonitor):
     def __init__(self, pool: WorkerPool, ctx: MonitorContext):
         self.pool = pool
         self.ctx = ctx

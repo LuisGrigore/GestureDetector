@@ -3,7 +3,7 @@ import random
 import os
 from queue import Empty
 
-from batch_processor.factory import create_batch_processor
+from batch_processor.factory import BatchProcessorFactory
 from batch_processor.batch_worker import IBatchWorker
 from batch_processor.configuration import BatchProcessorConfig, FailurePolicy
 from batch_processor.batch_processor import IBatchProcessor
@@ -43,7 +43,8 @@ def main():
         worker_timeout=2.0,
     )
 
-    processor: IBatchProcessor[int, int] = create_batch_processor(
+    factory = BatchProcessorFactory()
+    processor: IBatchProcessor[int, int] = factory.create(
         n_workers=3,
         worker_factory=TestWorker,
         config=config,
