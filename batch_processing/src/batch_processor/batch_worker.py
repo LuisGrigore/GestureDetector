@@ -2,9 +2,9 @@ from abc import ABC, abstractmethod
 from queue import Empty
 from typing import Callable, Generic, TypeVar
 from .context import BatchProcessorContext
-from batch_processor.exception_info import ExceptionInfo
-from logger import logger
-from worker_pool.worker import IWorker
+from .exception_info import ExceptionInfo
+from ..logger import logger
+from ..worker_pool.worker import IWorker
 
 
 I = TypeVar("I")

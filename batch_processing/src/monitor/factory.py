@@ -1,9 +1,9 @@
 from .monitor import IWorkerMonitor, WorkerMonitor
 from .configuration import MonitorConfig
-from worker_pool.worker_pool import IWorkerPool, WorkerPool
 from .context import MonitorContext
-from context import ControlContext
-from .configuration import SharedConfig, FailurePolicy
+from ..worker_pool.worker_pool import IWorkerPool, WorkerPool
+from ..context import ControlContext
+from ..configuration import SharedConfig, FailurePolicy
 
 
 class MonitorFactory:

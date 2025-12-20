@@ -1,6 +1,6 @@
 from typing import Callable, Optional
 from .worker_pool import IWorkerPool, WorkerPool
-from worker_pool.worker import IWorker
+from .worker import IWorker
 
 
 class WorkerPoolFactory:

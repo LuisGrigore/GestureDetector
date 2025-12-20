@@ -1,6 +1,5 @@
-from context import ControlContext
 from .configuration import MonitorConfig
-
+from ..context import ControlContext
 
 class MonitorContext:
     def __init__(self, config: MonitorConfig, control_ctx: ControlContext):

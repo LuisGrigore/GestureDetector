@@ -1,9 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from dataclasses import dataclass
-
-from configuration import FailurePolicy, SharedConfig
+from ..configuration import FailurePolicy, SharedConfig
 
 @dataclass
 class MonitorConfig:

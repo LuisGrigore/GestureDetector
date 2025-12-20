@@ -3,10 +3,10 @@ import random
 import os
 from queue import Empty
 
-from batch_processor.factory import BatchProcessorFactory
-from batch_processor.batch_worker import IBatchWorker
-from batch_processor.configuration import BatchProcessorConfig, FailurePolicy
-from batch_processor.batch_processor import IBatchProcessor
+from src.batch_processor.factory import BatchProcessorFactory
+from src.batch_processor.batch_worker import IBatchWorker
+from src.batch_processor.configuration import BatchProcessorConfig, FailurePolicy
+from src.batch_processor.batch_processor import IBatchProcessor
 
 
 # ----------------------------

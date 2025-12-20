@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from multiprocessing import Process
 from threading import Lock
 from typing import Callable, Optional, List
-from worker_pool.worker import IWorker
+from .worker import IWorker
 from .worker_fatal_error import WorkerFatalError
 
 class IWorkerPool(ABC):

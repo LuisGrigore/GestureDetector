@@ -1,9 +1,8 @@
-from multiprocessing import Event
-from context import ControlContext
-from batch_processor.exception_info import ExceptionInfo
-from gen_mp_queue import GenMPQueue
-from batch_processor.configuration import ProcessorConfig
 from typing import Generic, TypeVar
+from .exception_info import ExceptionInfo
+from .configuration import ProcessorConfig
+from ..context import ControlContext
+from ..gen_mp_queue import GenMPQueue
 
 I = TypeVar("I")
 O = TypeVar("O")

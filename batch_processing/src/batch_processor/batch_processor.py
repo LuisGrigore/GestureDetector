@@ -4,10 +4,10 @@ from typing import Generic, TypeVar, Optional, List
 from contextlib import AbstractContextManager
 from .context import BatchProcessorContext
 from .worker_reported_error import WorkerReportedError
-from worker_pool.worker_pool import IWorkerPool
-from monitor.monitor import IWorkerMonitor
-from .configuration import FailurePolicy
 from .exception_info import ExceptionInfo
+from ..configuration import FailurePolicy
+from ..worker_pool.worker_pool import IWorkerPool
+from ..monitor.monitor import IWorkerMonitor
 
 
 I = TypeVar("I")

@@ -4,8 +4,8 @@ from threading import Thread
 from queue import Queue
 from typing import Optional, Generic, TypeVar
 from .context import MonitorContext
-from worker_pool.worker_pool import IWorkerPool
-from .configuration import FailurePolicy
+from ..worker_pool.worker_pool import IWorkerPool
+from ..configuration import FailurePolicy
 
 I = TypeVar("I")
 O = TypeVar("O")

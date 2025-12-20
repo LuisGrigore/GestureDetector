@@ -1,17 +1,14 @@
 from typing import Callable, TypeVar, Optional
 from .batch_processor import IBatchProcessor, BatchProcessor
-from context import ControlContext
-from .context import BatchProcessorContext
-from monitor.factory import MonitorFactory
-from monitor.monitor import IWorkerMonitor, WorkerMonitor
-from monitor.configuration import MonitorConfig
 from .batch_worker import BatchWorkerExecutor, IBatchWorker
-from worker_pool.factory import WorkerPoolFactory
-from .configuration import (
-    BatchProcessorConfig,
-    SharedConfig,
-    ProcessorConfig,
-)
+from .context import BatchProcessorContext
+from .configuration import BatchProcessorConfig, ProcessorConfig
+from ..context import ControlContext
+from ..monitor.factory import MonitorFactory
+from ..monitor.monitor import IWorkerMonitor
+from ..monitor.configuration import MonitorConfig
+from ..worker_pool.factory import WorkerPoolFactory
+from ..configuration import SharedConfig
 
 I = TypeVar("I")
 O = TypeVar("O")

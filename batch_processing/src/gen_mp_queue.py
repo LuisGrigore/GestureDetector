@@ -1,7 +1,5 @@
-
 from multiprocessing import Queue
 from typing import Generic, TypeVar, Optional
-from multiprocessing.synchronize import Event as EventType
 
 T = TypeVar("T")
 
