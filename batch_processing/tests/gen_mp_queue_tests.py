@@ -2,7 +2,7 @@ import pytest
 import time
 from queue import Empty, Full
 
-from gen_mp_queue import GenMPQueue
+from ..src.gen_mp_queue import GenMPQueue
 
 
 # ---------------------------------------------------------------------------

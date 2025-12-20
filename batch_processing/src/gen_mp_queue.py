@@ -1,9 +1,10 @@
+from contextlib import AbstractContextManager
 from multiprocessing import Queue
 from typing import Generic, TypeVar, Optional
 
 T = TypeVar("T")
 
-class GenMPQueue(Generic[T]):
+class GenMPQueue(Generic[T], AbstractContextManager):
     def __init__(self, maxsize: int = 0):
         self._queue = Queue(maxsize)
 
