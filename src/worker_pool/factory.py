@@ -1,5 +1,5 @@
 from typing import Callable, Optional
-from .worker_pool import WorkerPool
+from .worker_pool import IWorkerPool, WorkerPool
 from worker_pool.worker import IWorker
 
 
@@ -17,7 +17,7 @@ class WorkerPoolFactory:
         n_workers: int,
         worker_factory: Callable[[], IWorker],
         worker_timeout: Optional[float] = None,
-    ) -> WorkerPool:
+    ) -> IWorkerPool:
         """
         Create and configure a WorkerPool instance.
 

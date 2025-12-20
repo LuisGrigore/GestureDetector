@@ -4,7 +4,7 @@ from threading import Thread
 from queue import Queue
 from typing import Optional, Generic, TypeVar
 from .context import MonitorContext
-from worker_pool.worker_pool import WorkerPool
+from worker_pool.worker_pool import IWorkerPool
 from .configuration import FailurePolicy
 
 I = TypeVar("I")
@@ -22,7 +22,7 @@ class IWorkerMonitor(Generic[I, O], ABC):
 
 
 class WorkerMonitor(IWorkerMonitor):
-    def __init__(self, pool: WorkerPool, ctx: MonitorContext):
+    def __init__(self, pool: IWorkerPool, ctx: MonitorContext):
         self.pool = pool
         self.ctx = ctx
         self.events = Queue()

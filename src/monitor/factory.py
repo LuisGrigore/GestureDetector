@@ -1,6 +1,6 @@
-from .monitor import WorkerMonitor
+from .monitor import IWorkerMonitor, WorkerMonitor
 from .configuration import MonitorConfig
-from worker_pool.worker_pool import WorkerPool
+from worker_pool.worker_pool import IWorkerPool, WorkerPool
 from .context import MonitorContext
 from context import ControlContext
 from .configuration import SharedConfig, FailurePolicy
@@ -16,10 +16,10 @@ class MonitorFactory:
 
     def create_with_shared_control_context(
         self,
-        pool: WorkerPool,
+        pool: IWorkerPool,
         monitor_config: MonitorConfig,
         control_ctx: ControlContext,
-    ) -> WorkerMonitor:
+    ) -> IWorkerMonitor:
         """
         Create a WorkerMonitor using a shared ControlContext.
 
@@ -41,7 +41,7 @@ class MonitorFactory:
         self,
         pool: WorkerPool,
         monitor_config: MonitorConfig,
-    ) -> WorkerMonitor:
+    ) -> IWorkerMonitor:
         """
         Create an independent WorkerMonitor with its own ControlContext.
 
@@ -65,7 +65,7 @@ class MonitorFactory:
         on_worker_death: FailurePolicy = FailurePolicy.RESTART,
         worker_monitoring_frequency: float = 1.0,
         logging: bool = True,
-    ) -> WorkerMonitor:
+    ) -> IWorkerMonitor:
         """
         Create a WorkerMonitor with default settings.
 
