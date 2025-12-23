@@ -10,7 +10,7 @@ from src.iterable_batch_processor.itergble_batch_processor import IterableBatchP
 
 class SimpleWorker(IBatchWorker[int, int]):
     def work(self, item: int) -> int:
-        #time.sleep(0.01)  # Simular procesamiento
+        time.sleep(0.0001)  # Simular procesamiento
         return item * item
 
 
@@ -18,21 +18,21 @@ def simple_iteration(data: List[int]) -> List[int]:
     """Procesar datos iterando directamente."""
     result = []
     for item in data:
-        #time.sleep(0.01)  # Misma simulación
+        time.sleep(0.0001)  # Misma simulación
         result.append(item * item)
     return result
 
 
 async def benchmark():
     # Datos de prueba
-    data = list(range(1000000))  # 1000 elementos para benchmark
+    data = list(range(100000))  # 1000 elementos para benchmark
     print(f"Procesando {len(data)} elementos...")
 
     # Benchmark Batch Processor
     print("\n--- Benchmark Batch Processor ---")
     factory = BatchProcessorFactory()
     batch_proc = factory.create_with_default_settings(
-        n_workers=4,
+        n_workers=8,
         worker_factory=SimpleWorker,
     )
 

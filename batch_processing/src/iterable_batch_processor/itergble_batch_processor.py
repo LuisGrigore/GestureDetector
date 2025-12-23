@@ -48,7 +48,8 @@ class IterableBatchProcessor(IIterableBatchProcessor[I, O]):
                 self._out_iterable.append(result)
                 processed += 1
             except Empty:
-                await asyncio.sleep(0.01)  # Esperar un poco antes de intentar de nuevo
+                continue
+                #await asyncio.sleep(0.01)  # Esperar un poco antes de intentar de nuevo
 
     async def process(self) -> Iterable[O]:
         """Procesa los elementos usando el batch processor y retorna el iterable de salida."""
