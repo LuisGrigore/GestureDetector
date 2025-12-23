@@ -11,6 +11,8 @@ from .src.monitor.factory import MonitorFactory
 from .src.monitor.monitor import IWorkerMonitor
 from .src.monitor.configuration import MonitorConfig
 
+from .src.iterable_batch_processor.iterable_batch_processor import IIterableBatchProcessor
+
 from .src.context import ControlContext
 
 from .src.configuration import FailurePolicy
@@ -27,6 +29,7 @@ __all__ = [
     "MonitorFactory",
     "IWorkerMonitor",
     "MonitorConfig",
+    "IIterableBatchProcessor",
     "ControlContext",
     "FailurePolicy"
 ]

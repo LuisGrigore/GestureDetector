@@ -34,6 +34,10 @@ class IBatchProcessor(Generic[I, O], AbstractContextManager):
     @abstractmethod
     def get_nowait(self) -> O:
         pass
+    
+    @abstractmethod
+    def get(self) -> O:
+        pass
 
 
 class BatchProcessor(IBatchProcessor[I, O]):
@@ -100,6 +104,7 @@ class BatchProcessor(IBatchProcessor[I, O]):
         return self.ctx.out_queue.get_nowait()
 
     def __enter__(self):
+        self.start()
         return self
 
     def __exit__(self, exc_type, exc, tb):
